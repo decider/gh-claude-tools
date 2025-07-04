@@ -20,10 +20,28 @@ Before installing gh-claude-tools, ensure you have the following installed:
 2. **GitHub CLI** - Install with `brew install gh` (macOS) or see [installation guide](https://cli.github.com/)
 3. **Claude CLI** - Install with `npm install -g @anthropic-ai/claude-cli`
 
-### Install via npm
+### Install from GitHub
 
 ```bash
-npm install -g gh-claude-tools
+# Install directly from GitHub
+npm install -g github:decider/gh-claude-tools
+
+# Or install from a specific branch
+npm install -g github:decider/gh-claude-tools#main
+```
+
+### Install from Local Repository
+
+```bash
+# Clone the repository
+git clone https://github.com/decider/gh-claude-tools.git
+cd gh-claude-tools
+
+# Install globally
+npm install -g .
+
+# Or link for development
+npm link
 ```
 
 The post-install script will verify all prerequisites are installed.
@@ -137,9 +155,18 @@ jobs:
 
 ## Configuration
 
+### Authentication
+
+gh-claude-tools automatically handles Claude authentication by checking in this order:
+
+1. **Environment Variable**: `ANTHROPIC_API_KEY` 
+2. **Claude CLI**: If you have Claude CLI installed and authenticated
+3. **Saved Config**: Previous API key saved in `~/.gh-claude-tools/config.json`
+4. **Interactive Prompt**: Only asks for API key if none of the above work
+
 ### Environment Variables
 
-- `CLAUDE_API_KEY` - Your Claude API key (if not using claude CLI auth)
+- `ANTHROPIC_API_KEY` - Your Anthropic API key (optional if using Claude CLI)
 - `GITHUB_TOKEN` - GitHub token (automatically set in GitHub Actions)
 
 ### Git Configuration
