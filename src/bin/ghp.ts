@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { 
+import { 
   getCurrentBranch,
   hasUncommittedChanges,
   ensureBranchPushed,
@@ -10,9 +10,9 @@ const {
   exec,
   execStream,
   chalk 
-} = require('../lib/helpers');
+} from '../lib/helpers';
 
-async function main() {
+async function main(): Promise<void> {
   try {
     const branch = await getCurrentBranch();
 
@@ -62,18 +62,18 @@ async function main() {
       // Create PR
       try {
         const prOutput = await exec(`gh pr create --title "${title}" --body "${body}" --base main --head "${branch}"`);
-        const prUrl = prOutput.match(/https:\/\/[^\s]+/)?.[0];
+        const prUrl = prOutput?.match(/https:\/\/[^\s]+/)?.[0];
         if (prUrl) {
           console.log(chalk.green(`✓ PR created: ${prUrl}`));
         }
       } catch (error) {
         console.log(chalk.red('✗ Failed to create PR'));
-        console.error(error.message);
+        console.error(error instanceof Error ? error.message : error);
         process.exit(1);
       }
     }
   } catch (error) {
-    console.error(chalk.red(`Error: ${error.message}`));
+    console.error(chalk.red(`Error: ${error instanceof Error ? error.message : error}`));
     process.exit(1);
   }
 }

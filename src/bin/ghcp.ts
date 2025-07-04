@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
-const { 
+import { 
   getCurrentBranch,
   ensureBranchPushed,
   getCurrentPR,
   execStream,
   chalk 
-} = require('../lib/helpers');
+} from '../lib/helpers';
 
-async function main() {
+async function main(): Promise<void> {
   try {
     console.log(chalk.blue('🚀 Starting commit and push workflow...'));
     
@@ -37,7 +37,7 @@ async function main() {
       console.log(chalk.yellow('💡 No PR yet. Run \'ghp\' to create one.'));
     }
   } catch (error) {
-    console.error(chalk.red(`Error: ${error.message}`));
+    console.error(chalk.red(`Error: ${error instanceof Error ? error.message : error}`));
     process.exit(1);
   }
 }

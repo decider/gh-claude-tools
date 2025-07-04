@@ -54,3 +54,9 @@ coverage
 # Temporary files
 tmp/
 temp/
+
+# Build output
+dist/
+
+# TypeScript
+*.tsbuildinfo

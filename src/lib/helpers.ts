@@ -1,16 +1,15 @@
-#!/usr/bin/env node
-
-const execa = require('execa');
-const chalk = require('chalk');
-const fs = require('fs').promises;
-const path = require('path');
-const os = require('os');
-const readline = require('readline');
+import * as execa from 'execa';
+import chalk from 'chalk';
+import { promises as fs } from 'fs';
+import * as path from 'path';
+import * as os from 'os';
+import * as readline from 'readline';
+import { AuthResult, ExecOptions } from './types';
 
 /**
  * Execute a shell command and return the result
  */
-async function exec(command, options = {}) {
+export async function exec(command: string, options: ExecOptions = {}): Promise<string | null> {
   try {
     const result = await execa.command(command, { shell: true, ...options });
     return result.stdout;
@@ -25,7 +24,7 @@ async function exec(command, options = {}) {
 /**
  * Execute a command and stream output to console
  */
-async function execStream(command, options = {}) {
+export async function execStream(command: string, options: ExecOptions = {}): Promise<boolean> {
   try {
     await execa.command(command, { shell: true, stdio: 'inherit', ...options });
     return true;
@@ -40,14 +39,18 @@ async function execStream(command, options = {}) {
 /**
  * Get the current git branch
  */
-async function getCurrentBranch() {
-  return await exec('git branch --show-current');
+export async function getCurrentBranch(): Promise<string> {
+  const branch = await exec('git branch --show-current');
+  if (!branch) {
+    throw new Error('Failed to get current branch');
+  }
+  return branch;
 }
 
 /**
  * Check if there are uncommitted changes
  */
-async function hasUncommittedChanges() {
+export async function hasUncommittedChanges(): Promise<boolean> {
   const unstaged = await exec('git diff --name-only', { throwOnError: false });
   const staged = await exec('git diff --cached --name-only', { throwOnError: false });
   return !!(unstaged || staged);
@@ -56,7 +59,7 @@ async function hasUncommittedChanges() {
 /**
  * Check if there are staged changes
  */
-async function hasStagedChanges() {
+export async function hasStagedChanges(): Promise<boolean> {
   const staged = await exec('git diff --cached --name-only', { throwOnError: false });
   return !!staged;
 }
@@ -64,7 +67,7 @@ async function hasStagedChanges() {
 /**
  * Get or prompt for Anthropic API key
  */
-async function getAnthropicApiKey() {
+async function getAnthropicApiKey(): Promise<AuthResult> {
   // 1. Check environment variable
   if (process.env.ANTHROPIC_API_KEY) {
     return { method: 'env', key: process.env.ANTHROPIC_API_KEY };
@@ -98,7 +101,7 @@ async function getAnthropicApiKey() {
     output: process.stdout
   });
 
-  const apiKey = await new Promise((resolve) => {
+  const apiKey = await new Promise<string>((resolve) => {
     rl.question('Enter your Anthropic API key: ', (answer) => {
       rl.close();
       resolve(answer.trim());
@@ -125,7 +128,7 @@ async function getAnthropicApiKey() {
 /**
  * Execute Claude AI command with proper authentication
  */
-async function executeClaudeCommand(prompt, input) {
+async function executeClaudeCommand(prompt: string, input: string): Promise<string> {
   const auth = await getAnthropicApiKey();
   
   if (auth.method === 'claude-cli') {
@@ -162,7 +165,7 @@ async function executeClaudeCommand(prompt, input) {
 /**
  * Generate commit message using Claude
  */
-async function generateCommitMessage(diff) {
+export async function generateCommitMessage(diff: string): Promise<string> {
   const prompt = `Write a conventional commit message for these changes. Format: <type>: <description>. Keep under 72 chars. Use types: feat/fix/docs/style/refactor/test/chore. Output ONLY the commit message, no explanation.`;
   
   try {
@@ -176,7 +179,7 @@ async function generateCommitMessage(diff) {
 /**
  * Generate PR content using Claude
  */
-async function generatePRContent(context) {
+export async function generatePRContent(context: string): Promise<string> {
   const prompt = `Based on these git changes, write a PR title (first line, under 72 chars) and description. Include: brief summary, key changes as bullets. Format for GitHub markdown. Output ONLY the title on first line, then a blank line, then the description.`;
   
   try {
@@ -190,7 +193,7 @@ async function generatePRContent(context) {
 /**
  * Ensure branch is pushed and tracked
  */
-async function ensureBranchPushed() {
+export async function ensureBranchPushed(): Promise<void> {
   const branch = await getCurrentBranch();
   
   // Check if branch has upstream
@@ -208,10 +211,10 @@ async function ensureBranchPushed() {
 /**
  * Get PR context for Claude
  */
-async function getPRContext() {
-  const diffStat = await exec('git diff origin/main...HEAD --stat');
-  const commits = await exec('git log origin/main..HEAD --oneline');
-  const diffSample = await exec('git diff origin/main...HEAD | head -300');
+export async function getPRContext(): Promise<string> {
+  const diffStat = await exec('git diff origin/main...HEAD --stat') || '';
+  const commits = await exec('git log origin/main..HEAD --oneline') || '';
+  const diffSample = await exec('git diff origin/main...HEAD | head -300') || '';
   
   return `Diff summary:\n${diffStat}\n\nCommits:\n${commits}\n\nSample changes:\n${diffSample}`;
 }
@@ -219,7 +222,7 @@ async function getPRContext() {
 /**
  * Check if PR exists for current branch
  */
-async function getCurrentPR() {
+export async function getCurrentPR(): Promise<string | null> {
   try {
     const prUrl = await exec('gh pr view --json url -q .url');
     return prUrl || null;
@@ -231,22 +234,9 @@ async function getCurrentPR() {
 /**
  * Stage all changes
  */
-async function stageAllChanges() {
+export async function stageAllChanges(): Promise<void> {
   console.log(chalk.yellow('📝 Staging all changes...'));
   await exec('git add -A');
 }
 
-module.exports = {
-  exec,
-  execStream,
-  getCurrentBranch,
-  hasUncommittedChanges,
-  hasStagedChanges,
-  generateCommitMessage,
-  generatePRContent,
-  ensureBranchPushed,
-  getPRContext,
-  getCurrentPR,
-  stageAllChanges,
-  chalk
-};
+export { chalk };

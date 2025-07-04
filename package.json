@@ -13,14 +13,22 @@
     "pull-request"
   ],
   "bin": {
-    "ghc": "./bin/ghc",
-    "ghp": "./bin/ghp",
-    "ghpa": "./bin/ghpa",
-    "ghn": "./bin/ghn",
-    "ghcp": "./bin/ghcp"
+    "ghc": "./dist/bin/ghc.js",
+    "ghp": "./dist/bin/ghp.js",
+    "ghpa": "./dist/bin/ghpa.js",
+    "ghn": "./dist/bin/ghn.js",
+    "ghcp": "./dist/bin/ghcp.js"
   },
+  "main": "./dist/lib/helpers.js",
+  "types": "./dist/lib/helpers.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
   "scripts": {
-    "postinstall": "node ./scripts/check-requirements.js"
+    "build": "tsc",
+    "postinstall": "node ./dist/scripts/check-requirements.js",
+    "prepare": "npm run build",
+    "dev": "tsx"
   },
   "repository": {
     "type": "git",
@@ -37,7 +45,12 @@
   },
   "preferGlobal": true,
   "dependencies": {
-    "execa": "^5.1.1",
-    "chalk": "^4.1.2"
+    "chalk": "^4.1.2",
+    "execa": "^5.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.10",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
   }
 }

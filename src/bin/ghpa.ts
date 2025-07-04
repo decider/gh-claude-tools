@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const { exec, execStream, chalk } = require('../lib/helpers');
+import { exec, execStream, chalk } from '../lib/helpers';
 
-async function main() {
+async function main(): Promise<void> {
   try {
     console.log(chalk.blue('🚀 Creating PR with auto-merge...'));
     
@@ -22,7 +22,7 @@ async function main() {
       console.log(chalk.yellow('⚠️  Could not enable auto-merge (may already be enabled or checks pending)'));
     }
   } catch (error) {
-    console.error(chalk.red(`Error: ${error.message}`));
+    console.error(chalk.red(`Error: ${error instanceof Error ? error.message : error}`));
     process.exit(1);
   }
 }

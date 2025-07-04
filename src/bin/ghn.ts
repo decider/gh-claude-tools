@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const { exec, chalk } = require('../lib/helpers');
+import { exec, chalk } from '../lib/helpers';
 
-async function main() {
+async function main(): Promise<void> {
   const branchName = process.argv[2];
   
   if (!branchName) {
@@ -20,7 +20,7 @@ async function main() {
     console.log(chalk.green(`✓ Switched to new branch '${branchName}'`));
   } catch (error) {
     console.log(chalk.red('✗ Failed to create branch'));
-    console.error(chalk.red(error.message));
+    console.error(chalk.red(error instanceof Error ? error.message : String(error)));
     process.exit(1);
   }
 }
