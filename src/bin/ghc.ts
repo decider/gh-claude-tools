@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { 
+import { 
   hasUncommittedChanges, 
   hasStagedChanges, 
   stageAllChanges,
@@ -8,9 +8,9 @@ const {
   getCurrentPR,
   exec,
   chalk 
-} = require('../lib/helpers');
+} from '../lib/helpers';
 
-async function main() {
+async function main(): Promise<void> {
   try {
     // Check for changes
     if (!(await hasUncommittedChanges())) {
@@ -50,7 +50,7 @@ async function main() {
       process.exit(1);
     }
   } catch (error) {
-    console.error(chalk.red(`Error: ${error.message}`));
+    console.error(chalk.red(`Error: ${error instanceof Error ? error.message : error}`));
     process.exit(1);
   }
 }
