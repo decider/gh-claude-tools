@@ -24,14 +24,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-username/gh-claude-tools.git"
+    "url": "git+https://github.com/decider/gh-claude-tools.git"
   },
   "author": "Dan Seider",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/your-username/gh-claude-tools/issues"
+    "url": "https://github.com/decider/gh-claude-tools/issues"
   },
-  "homepage": "https://github.com/your-username/gh-claude-tools#readme",
+  "homepage": "https://github.com/decider/gh-claude-tools#readme",
   "engines": {
     "node": ">=14.0.0"
   },
