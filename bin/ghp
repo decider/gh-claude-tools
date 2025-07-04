@@ -1,0 +1,81 @@
+#!/usr/bin/env node
+
+const { 
+  getCurrentBranch,
+  hasUncommittedChanges,
+  ensureBranchPushed,
+  getCurrentPR,
+  getPRContext,
+  generatePRContent,
+  exec,
+  execStream,
+  chalk 
+} = require('../lib/helpers');
+
+async function main() {
+  try {
+    const branch = await getCurrentBranch();
+
+    // Commit if needed
+    if (await hasUncommittedChanges()) {
+      console.log(chalk.yellow('📝 Uncommitted changes detected...'));
+      const ghcPath = require.resolve('./ghc');
+      const ghcResult = await execStream(`node "${ghcPath}"`, { throwOnError: false });
+      if (!ghcResult) {
+        process.exit(1);
+      }
+    }
+
+    // Push with tracking
+    try {
+      await ensureBranchPushed();
+      console.log(chalk.green(`✓ Pushed to origin/${branch}`));
+    } catch (error) {
+      console.log(chalk.red('✗ Push failed'));
+      process.exit(1);
+    }
+
+    // Check existing PR
+    const existingPR = await getCurrentPR();
+
+    if (existingPR) {
+      console.log(chalk.green(`✓ PR already exists: ${existingPR}`));
+      console.log(chalk.yellow('⏳ Auto-updating PR description...'));
+      
+      const context = await getPRContext();
+      const prContent = await generatePRContent(context);
+      const description = prContent.split('\n').slice(2).join('\n');
+      
+      await exec(`gh pr edit --body "${description}"`);
+      console.log(chalk.green('✓ PR description updated'));
+    } else {
+      // Create new PR
+      console.log(chalk.yellow('⏳ Creating new PR...'));
+      console.log(chalk.yellow('⏳ Generating PR title and description...'));
+      
+      const context = await getPRContext();
+      const prContent = await generatePRContent(context);
+      const lines = prContent.split('\n');
+      const title = lines[0];
+      const body = lines.slice(2).join('\n');
+      
+      // Create PR
+      try {
+        const prOutput = await exec(`gh pr create --title "${title}" --body "${body}" --base main --head "${branch}"`);
+        const prUrl = prOutput.match(/https:\/\/[^\s]+/)?.[0];
+        if (prUrl) {
+          console.log(chalk.green(`✓ PR created: ${prUrl}`));
+        }
+      } catch (error) {
+        console.log(chalk.red('✗ Failed to create PR'));
+        console.error(error.message);
+        process.exit(1);
+      }
+    }
+  } catch (error) {
+    console.error(chalk.red(`Error: ${error.message}`));
+    process.exit(1);
+  }
+}
+
+main();

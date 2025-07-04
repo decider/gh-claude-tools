@@ -1,0 +1,43 @@
+{
+  "name": "gh-claude-tools",
+  "version": "1.0.0",
+  "description": "GitHub CLI tools powered by Claude AI for intelligent commits, PRs, and automation",
+  "keywords": [
+    "github",
+    "git",
+    "claude",
+    "ai",
+    "automation",
+    "cli",
+    "commit",
+    "pull-request"
+  ],
+  "bin": {
+    "ghc": "./bin/ghc",
+    "ghp": "./bin/ghp",
+    "ghpa": "./bin/ghpa",
+    "ghn": "./bin/ghn",
+    "ghcp": "./bin/ghcp"
+  },
+  "scripts": {
+    "postinstall": "node ./scripts/check-requirements.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/gh-claude-tools.git"
+  },
+  "author": "Dan Seider",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/your-username/gh-claude-tools/issues"
+  },
+  "homepage": "https://github.com/your-username/gh-claude-tools#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "preferGlobal": true,
+  "dependencies": {
+    "execa": "^5.1.1",
+    "chalk": "^4.1.2"
+  }
+}
