@@ -22,12 +22,11 @@
   "main": "./dist/lib/helpers.js",
   "types": "./dist/lib/helpers.d.ts",
   "files": [
-    "dist/**/*",
-    "scripts/**/*"
+    "dist/**/*"
   ],
   "scripts": {
     "build": "tsc",
-    "postinstall": "node ./scripts/check-requirements.js",
+    "postinstall": "node ./dist/scripts/check-requirements.js",
     "prepare": "npm run build",
     "dev": "tsx"
   },

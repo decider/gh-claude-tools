@@ -16,5 +16,8 @@
     "moduleResolution": "node"
   },
   "include": ["src/**/*"],
+  "ts-node": {
+    "esm": true
+  },
   "exclude": ["node_modules", "dist"]
 }
