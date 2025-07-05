@@ -53,7 +53,8 @@ export async function getCurrentBranch(): Promise<string> {
 export async function hasUncommittedChanges(): Promise<boolean> {
   const unstaged = await exec('git diff --name-only', { throwOnError: false });
   const staged = await exec('git diff --cached --name-only', { throwOnError: false });
-  return !!(unstaged || staged);
+  const untracked = await exec('git ls-files --others --exclude-standard', { throwOnError: false });
+  return !!(unstaged || staged || untracked);
 }
 
 /**
