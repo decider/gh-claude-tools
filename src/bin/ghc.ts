@@ -47,6 +47,10 @@ async function main(): Promise<void> {
       process.exit(0);
     } catch (error) {
       console.log(chalk.red('✗ Commit failed'));
+      if (error instanceof Error) {
+        console.log(chalk.red(`\nError details:`));
+        console.log(chalk.gray(error.message));
+      }
       process.exit(1);
     }
   } catch (error) {
