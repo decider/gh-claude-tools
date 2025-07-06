@@ -59,9 +59,24 @@ async function main(): Promise<void> {
       const title = lines[0];
       const body = lines.slice(2).join('\n');
       
-      // Create PR
+      // Create PR using temporary file for body to avoid shell escaping issues
       try {
-        const prOutput = await exec(`gh pr create --title "${title}" --body "${body}" --base main --head "${branch}"`);
+        const fs = require('fs');
+        const os = require('os');
+        const path = require('path');
+        
+        // Write PR body to temporary file
+        const tmpFile = path.join(os.tmpdir(), `pr-body-${Date.now()}.md`);
+        fs.writeFileSync(tmpFile, body);
+        
+        console.log(chalk.gray(`📝 Creating PR with title: ${title}`));
+        // Escape title for shell command
+        const escapedTitle = title.replace(/"/g, '\\"');
+        const prOutput = await exec(`gh pr create --title "${escapedTitle}" --body-file "${tmpFile}" --base main --head "${branch}"`);
+        
+        // Clean up temp file
+        fs.unlinkSync(tmpFile);
+        
         const prUrl = prOutput?.match(/https:\/\/[^\s]+/)?.[0];
         if (prUrl) {
           console.log(chalk.green(`✓ PR created: ${prUrl}`));
