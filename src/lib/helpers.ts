@@ -132,6 +132,9 @@ async function getAnthropicApiKey(): Promise<AuthResult> {
 async function executeClaudeCommand(prompt: string, input: string): Promise<string> {
   const auth = await getAnthropicApiKey();
   
+  console.log(chalk.gray(`🔧 Auth method: ${auth.method}`));
+  console.log(chalk.gray(`⚡ Calling Claude CLI...`));
+  
   if (auth.method === 'claude-cli') {
     // Use claude CLI directly
     try {
@@ -140,8 +143,13 @@ async function executeClaudeCommand(prompt: string, input: string): Promise<stri
         input: input,
         timeout: 90000
       });
-      return result.stdout.trim();
+      console.log(chalk.gray(`✅ Claude CLI responded`));
+      console.log(chalk.gray(`📤 Response length: ${result.stdout.length} chars`));
+      const trimmed = result.stdout.trim();
+      console.log(chalk.gray(`🔄 Returning to caller...`));
+      return trimmed;
     } catch (error: any) {
+      console.log(chalk.gray(`❌ Claude CLI failed: ${error.message}`));
       if (error.timedOut) {
         throw new Error('Claude CLI timed out after 90 seconds. The diff may be too large or Claude API is slow.');
       }
@@ -159,8 +167,13 @@ async function executeClaudeCommand(prompt: string, input: string): Promise<stri
         timeout: 90000,
         env: { ...process.env, ...env }
       });
-      return result.stdout.trim();
+      console.log(chalk.gray(`✅ Claude CLI responded`));
+      console.log(chalk.gray(`📤 Response length: ${result.stdout.length} chars`));
+      const trimmed = result.stdout.trim();
+      console.log(chalk.gray(`🔄 Returning to caller...`));
+      return trimmed;
     } catch (error: any) {
+      console.log(chalk.gray(`❌ Claude CLI failed: ${error.message}`));
       if (error.timedOut) {
         throw new Error('Claude CLI timed out after 90 seconds. The diff may be too large or Claude API is slow.');
       }
@@ -226,7 +239,9 @@ export async function generatePRContent(context: string): Promise<string> {
   
   try {
     console.log(chalk.gray(`📊 Context size: ${context.length} characters`));
-    return await executeClaudeCommand(prompt, context);
+    const result = await executeClaudeCommand(prompt, context);
+    console.log(chalk.gray(`✨ PR content generated successfully`));
+    return result;
   } catch (error) {
     console.error(chalk.red('✗ Failed to generate PR content with Claude'));
     if (error instanceof Error) {
@@ -250,7 +265,19 @@ export async function ensureBranchPushed(): Promise<void> {
     await exec(`git push -u origin ${branch}`);
   } else {
     console.log(chalk.yellow(`⏳ Pushing ${branch} to origin...`));
-    await exec('git push');
+    try {
+      await exec('git push');
+    } catch (error: any) {
+      // Handle non-fast-forward by pulling first
+      if (error.message?.includes('non-fast-forward')) {
+        console.log(chalk.yellow('⏳ Remote has changes, pulling first...'));
+        await exec('git pull --rebase');
+        console.log(chalk.yellow('⏳ Retrying push...'));
+        await exec('git push');
+      } else {
+        throw error;
+      }
+    }
   }
 }
 

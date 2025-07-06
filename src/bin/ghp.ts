@@ -27,7 +27,6 @@ async function main(): Promise<void> {
     }
 
     // Push with tracking
-    console.log(chalk.yellow(`⏳ Pushing ${branch} to origin...`));
     try {
       await ensureBranchPushed();
       console.log(chalk.green(`✓ Pushed to origin/${branch}`));
