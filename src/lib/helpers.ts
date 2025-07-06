@@ -265,7 +265,19 @@ export async function ensureBranchPushed(): Promise<void> {
     await exec(`git push -u origin ${branch}`);
   } else {
     console.log(chalk.yellow(`⏳ Pushing ${branch} to origin...`));
-    await exec('git push');
+    try {
+      await exec('git push');
+    } catch (error: any) {
+      if (error.message?.includes('non-fast-forward')) {
+        console.log(chalk.red('\n❌ Push failed: Remote branch has new changes'));
+        console.log(chalk.yellow('\nOptions:'));
+        console.log(chalk.gray('  1. Pull and rebase:  git pull --rebase'));
+        console.log(chalk.gray('  2. Force push:       git push --force-with-lease'));
+        console.log(chalk.gray('  3. Check PR:         gh pr view --web\n'));
+        throw new Error('Remote branch has diverged. See options above.');
+      }
+      throw error;
+    }
   }
 }
 
