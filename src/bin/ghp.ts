@@ -27,11 +27,15 @@ async function main(): Promise<void> {
     }
 
     // Push with tracking
+    console.log(chalk.yellow(`⏳ Pushing ${branch} to origin...`));
     try {
       await ensureBranchPushed();
       console.log(chalk.green(`✓ Pushed to origin/${branch}`));
     } catch (error) {
       console.log(chalk.red('✗ Push failed'));
+      if (error instanceof Error) {
+        console.log(chalk.gray(`Error details: ${error.message}`));
+      }
       process.exit(1);
     }
 
@@ -46,7 +50,15 @@ async function main(): Promise<void> {
       const prContent = await generatePRContent(context);
       const description = prContent.split('\n').slice(2).join('\n');
       
-      await exec(`gh pr edit --body "${description}"`);
+      // Use temp file for PR edit to avoid escaping issues
+      const fs = require('fs');
+      const os = require('os');
+      const path = require('path');
+      const tmpFile = path.join(os.tmpdir(), `pr-edit-${Date.now()}.md`);
+      fs.writeFileSync(tmpFile, description);
+      
+      await exec(`gh pr edit --body-file "${tmpFile}"`);
+      fs.unlinkSync(tmpFile);
       console.log(chalk.green('✓ PR description updated'));
     } else {
       // Create new PR
