@@ -243,21 +243,9 @@ export async function ensureBranchPushed(): Promise<void> {
 export async function getPRContext(): Promise<string> {
   const diffStat = await exec('git diff origin/main...HEAD --stat') || '';
   const commits = await exec('git log origin/main..HEAD --oneline') || '';
+  const diffSample = await exec('git diff origin/main...HEAD | head -300') || '';
   
-  // Get a more focused diff sample that limits character count rather than line count
-  const diffSample = await exec('git diff origin/main...HEAD --stat-width=80') || '';
-  const fileList = await exec('git diff origin/main...HEAD --name-only') || '';
-  
-  // For very large diffs, just use the file list and stat summary
-  const context = `Files changed:\n${fileList}\n\nDiff summary:\n${diffStat}\n\nCommits:\n${commits}`;
-  
-  // Only add diff sample if the total context is reasonable (under ~8000 chars)
-  if (context.length < 6000) {
-    const limitedDiff = await exec('git diff origin/main...HEAD | head -100') || '';
-    return `${context}\n\nSample changes:\n${limitedDiff}`;
-  }
-  
-  return context;
+  return `Diff summary:\n${diffStat}\n\nCommits:\n${commits}\n\nSample changes:\n${diffSample}`;
 }
 
 /**
