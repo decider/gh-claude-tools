@@ -1,6 +1,6 @@
 {
   "name": "gh-claude-tools",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "GitHub CLI tools powered by Claude AI for intelligent commits, PRs, and automation",
   "keywords": [
     "github",
