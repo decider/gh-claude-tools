@@ -137,7 +137,7 @@ async function executeClaudeCommand(prompt: string, input: string): Promise<stri
     const result = await execa.command(`claude --print "${prompt}"`, {
       shell: true,
       input: input,
-      timeout: 30000
+      timeout: 90000
     });
     return result.stdout.trim();
   } else {
@@ -149,7 +149,7 @@ async function executeClaudeCommand(prompt: string, input: string): Promise<stri
       const result = await execa.command(`claude --print "${prompt}"`, {
         shell: true,
         input: input,
-        timeout: 30000,
+        timeout: 90000,
         env: { ...process.env, ...env }
       });
       return result.stdout.trim();
@@ -167,7 +167,7 @@ async function executeClaudeCommand(prompt: string, input: string): Promise<stri
  * Limit diff size for commit message generation
  */
 function limitDiffForCommit(diff: string): string {
-  const maxChars = 8000;
+  const maxChars = 15000;
   
   if (diff.length <= maxChars) {
     return diff;
@@ -179,7 +179,7 @@ function limitDiffForCommit(diff: string): string {
   const changeLines = lines.filter(line => line.startsWith('+') || line.startsWith('-'));
   
   // Include file headers and first N change lines
-  const limitedLines = [...fileHeaders, ...changeLines.slice(0, 100)];
+  const limitedLines = [...fileHeaders, ...changeLines.slice(0, 200)];
   const limitedDiff = limitedLines.join('\n');
   
   if (limitedDiff.length <= maxChars) {
@@ -238,14 +238,69 @@ export async function ensureBranchPushed(): Promise<void> {
 }
 
 /**
+ * Limit diff size for PR description generation
+ */
+function limitDiffForPR(diff: string): string {
+  const maxChars = 30000;
+  
+  if (diff.length <= maxChars) {
+    return diff;
+  }
+  
+  // For large diffs, create a structured summary
+  const lines = diff.split('\n');
+  const fileHeaders = lines.filter(line => 
+    line.startsWith('diff --git') || 
+    line.startsWith('+++') || 
+    line.startsWith('---') ||
+    line.startsWith('index ')
+  );
+  
+  // Get a sample of changes from each file
+  const changesByFile: { [key: string]: string[] } = {};
+  let currentFile = '';
+  
+  for (const line of lines) {
+    if (line.startsWith('diff --git')) {
+      currentFile = line;
+      changesByFile[currentFile] = [];
+    } else if (currentFile && (line.startsWith('+') || line.startsWith('-'))) {
+      if (!changesByFile[currentFile]) {
+        changesByFile[currentFile] = [];
+      }
+      if (changesByFile[currentFile].length < 20) { // Limit lines per file
+        changesByFile[currentFile].push(line);
+      }
+    }
+  }
+  
+  // Build the limited diff
+  let limitedDiff = fileHeaders.join('\n') + '\n\n';
+  let currentLength = limitedDiff.length;
+  
+  for (const [file, changes] of Object.entries(changesByFile)) {
+    const section = `\n${file}\n${changes.join('\n')}\n`;
+    if (currentLength + section.length > maxChars) {
+      break;
+    }
+    limitedDiff += section;
+    currentLength += section.length;
+  }
+  
+  return limitedDiff + '\n\n[Diff truncated - PR contains additional changes]';
+}
+
+/**
  * Get PR context for Claude
  */
 export async function getPRContext(): Promise<string> {
   const diffStat = await exec('git diff origin/main...HEAD --stat') || '';
   const commits = await exec('git log origin/main..HEAD --oneline') || '';
-  const diffSample = await exec('git diff origin/main...HEAD | head -300') || '';
+  const fullDiff = await exec('git diff origin/main...HEAD') || '';
   
-  return `Diff summary:\n${diffStat}\n\nCommits:\n${commits}\n\nSample changes:\n${diffSample}`;
+  const limitedDiff = limitDiffForPR(fullDiff);
+  
+  return `Diff summary:\n${diffStat}\n\nCommits:\n${commits}\n\nSample changes:\n${limitedDiff}`;
 }
 
 /**
