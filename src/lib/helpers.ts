@@ -6,6 +6,9 @@ import * as os from 'os';
 import * as readline from 'readline';
 import { AuthResult, ExecOptions } from './types';
 
+// Global debug flag
+export const isDebug = process.argv.includes('--debug') || process.argv.includes('-d');
+
 /**
  * Execute a shell command and return the result
  */
@@ -132,8 +135,10 @@ async function getAnthropicApiKey(): Promise<AuthResult> {
 async function executeClaudeCommand(prompt: string, input: string): Promise<string> {
   const auth = await getAnthropicApiKey();
   
-  console.log(chalk.gray(`🔧 Auth method: ${auth.method}`));
-  console.log(chalk.gray(`⚡ Calling Claude CLI...`));
+  if (isDebug) {
+    console.log(chalk.gray(`🔧 Auth method: ${auth.method}`));
+    console.log(chalk.gray(`⚡ Calling Claude CLI...`));
+  }
   
   if (auth.method === 'claude-cli') {
     // Use claude CLI directly
@@ -143,13 +148,19 @@ async function executeClaudeCommand(prompt: string, input: string): Promise<stri
         input: input,
         timeout: 90000
       });
-      console.log(chalk.gray(`✅ Claude CLI responded`));
-      console.log(chalk.gray(`📤 Response length: ${result.stdout.length} chars`));
+      if (isDebug) {
+        console.log(chalk.gray(`✅ Claude CLI responded`));
+        console.log(chalk.gray(`📤 Response length: ${result.stdout.length} chars`));
+      }
       const trimmed = result.stdout.trim();
-      console.log(chalk.gray(`🔄 Returning to caller...`));
+      if (isDebug) {
+        console.log(chalk.gray(`🔄 Returning to caller...`));
+      }
       return trimmed;
     } catch (error: any) {
-      console.log(chalk.gray(`❌ Claude CLI failed: ${error.message}`));
+      if (isDebug) {
+        console.log(chalk.gray(`❌ Claude CLI failed: ${error.message}`));
+      }
       if (error.timedOut) {
         throw new Error('Claude CLI timed out after 90 seconds. The diff may be too large or Claude API is slow.');
       }
@@ -167,13 +178,19 @@ async function executeClaudeCommand(prompt: string, input: string): Promise<stri
         timeout: 90000,
         env: { ...process.env, ...env }
       });
-      console.log(chalk.gray(`✅ Claude CLI responded`));
-      console.log(chalk.gray(`📤 Response length: ${result.stdout.length} chars`));
+      if (isDebug) {
+        console.log(chalk.gray(`✅ Claude CLI responded`));
+        console.log(chalk.gray(`📤 Response length: ${result.stdout.length} chars`));
+      }
       const trimmed = result.stdout.trim();
-      console.log(chalk.gray(`🔄 Returning to caller...`));
+      if (isDebug) {
+        console.log(chalk.gray(`🔄 Returning to caller...`));
+      }
       return trimmed;
     } catch (error: any) {
-      console.log(chalk.gray(`❌ Claude CLI failed: ${error.message}`));
+      if (isDebug) {
+        console.log(chalk.gray(`❌ Claude CLI failed: ${error.message}`));
+      }
       if (error.timedOut) {
         throw new Error('Claude CLI timed out after 90 seconds. The diff may be too large or Claude API is slow.');
       }
@@ -238,9 +255,13 @@ export async function generatePRContent(context: string): Promise<string> {
   const prompt = `Based on these git changes, write a PR title (first line, under 72 chars) and description. Include: brief summary, key changes as bullets. Format for GitHub markdown. Output ONLY the title on first line, then a blank line, then the description.`;
   
   try {
-    console.log(chalk.gray(`📊 Context size: ${context.length} characters`));
+    if (isDebug) {
+      console.log(chalk.gray(`📊 Context size: ${context.length} characters`));
+    }
     const result = await executeClaudeCommand(prompt, context);
-    console.log(chalk.gray(`✨ PR content generated successfully`));
+    if (isDebug) {
+      console.log(chalk.gray(`✨ PR content generated successfully`));
+    }
     return result;
   } catch (error) {
     console.error(chalk.red('✗ Failed to generate PR content with Claude'));
@@ -291,11 +312,15 @@ function limitDiffForPR(diff: string): string {
     return diff;
   }
   
-  console.log(chalk.gray(`📝 Diff too large (${diff.length} chars), truncating to ${maxChars} chars`));
+  if (isDebug) {
+    console.log(chalk.gray(`📝 Diff too large (${diff.length} chars), truncating to ${maxChars} chars`));
+  }
   
   // For very large diffs, use simple truncation to avoid complexity
   if (diff.length > 100000) {
-    console.log(chalk.gray('🔪 Using simple truncation for very large diff'));
+    if (isDebug) {
+      console.log(chalk.gray('🔪 Using simple truncation for very large diff'));
+    }
     return diff.substring(0, maxChars) + '\n\n[Diff truncated - PR contains additional changes]';
   }
   
@@ -339,7 +364,9 @@ function limitDiffForPR(diff: string): string {
     currentLength += section.length;
   }
   
-  console.log(chalk.gray(`✂️ Truncated diff to ${limitedDiff.length} chars`));
+  if (isDebug) {
+    console.log(chalk.gray(`✂️ Truncated diff to ${limitedDiff.length} chars`));
+  }
   return limitedDiff + '\n\n[Diff truncated - PR contains additional changes]';
 }
 

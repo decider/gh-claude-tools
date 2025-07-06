@@ -50,6 +50,12 @@ The post-install script will verify all prerequisites are installed.
 
 ### Commands
 
+All commands support a `--debug` or `-d` flag to show detailed logging information:
+
+```bash
+ghc --debug  # Shows detailed API calls and processing steps
+```
+
 #### `ghc` - GitHub Commit with Claude
 Automatically stage changes and commit with an AI-generated message.
 

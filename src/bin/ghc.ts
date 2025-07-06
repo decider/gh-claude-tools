@@ -7,7 +7,8 @@ import {
   generateCommitMessage,
   getCurrentPR,
   exec,
-  chalk 
+  chalk,
+  isDebug
 } from '../lib/helpers';
 
 async function main(): Promise<void> {
@@ -48,8 +49,10 @@ async function main(): Promise<void> {
     } catch (error) {
       console.log(chalk.red('✗ Commit failed'));
       if (error instanceof Error) {
-        console.log(chalk.red(`\nError details:`));
-        console.log(chalk.gray(error.message));
+        if (isDebug) {
+          console.log(chalk.red(`\nError details:`));
+          console.log(chalk.gray(error.message));
+        }
       }
       process.exit(1);
     }

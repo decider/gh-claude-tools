@@ -9,7 +9,8 @@ import {
   generatePRContent,
   exec,
   execStream,
-  chalk 
+  chalk,
+  isDebug
 } from '../lib/helpers';
 
 async function main(): Promise<void> {
@@ -32,7 +33,7 @@ async function main(): Promise<void> {
       console.log(chalk.green(`✓ Pushed to origin/${branch}`));
     } catch (error) {
       console.log(chalk.red('✗ Push failed'));
-      if (error instanceof Error) {
+      if (error instanceof Error && isDebug) {
         console.log(chalk.gray(`Error details: ${error.message}`));
       }
       process.exit(1);
@@ -80,7 +81,9 @@ async function main(): Promise<void> {
         const tmpFile = path.join(os.tmpdir(), `pr-body-${Date.now()}.md`);
         fs.writeFileSync(tmpFile, body);
         
-        console.log(chalk.gray(`📝 Creating PR with title: ${title}`));
+        if (isDebug) {
+          console.log(chalk.gray(`📝 Creating PR with title: ${title}`));
+        }
         // Escape title for shell command
         const escapedTitle = title.replace(/"/g, '\\"');
         const prOutput = await exec(`gh pr create --title "${escapedTitle}" --body-file "${tmpFile}" --base main --head "${branch}"`);
