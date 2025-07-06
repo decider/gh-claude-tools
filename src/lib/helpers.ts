@@ -134,12 +134,19 @@ async function executeClaudeCommand(prompt: string, input: string): Promise<stri
   
   if (auth.method === 'claude-cli') {
     // Use claude CLI directly
-    const result = await execa.command(`claude --print "${prompt}"`, {
-      shell: true,
-      input: input,
-      timeout: 90000
-    });
-    return result.stdout.trim();
+    try {
+      const result = await execa.command(`claude --print "${prompt}"`, {
+        shell: true,
+        input: input,
+        timeout: 90000
+      });
+      return result.stdout.trim();
+    } catch (error: any) {
+      if (error.timedOut) {
+        throw new Error('Claude CLI timed out after 90 seconds. The diff may be too large or Claude API is slow.');
+      }
+      throw error;
+    }
   } else {
     // Use API directly with the key
     const env = auth.key ? { ANTHROPIC_API_KEY: auth.key } : {};
@@ -153,12 +160,18 @@ async function executeClaudeCommand(prompt: string, input: string): Promise<stri
         env: { ...process.env, ...env }
       });
       return result.stdout.trim();
-    } catch (error) {
-      // If claude CLI not available, we'd need to use the API directly
-      // For now, we'll require claude CLI to be installed
-      console.error(chalk.red('\n✗ Claude CLI is required but not found'));
-      console.error(chalk.yellow('Install with: npm install -g @anthropic-ai/claude-cli\n'));
-      throw new Error('Claude CLI not found');
+    } catch (error: any) {
+      if (error.timedOut) {
+        throw new Error('Claude CLI timed out after 90 seconds. The diff may be too large or Claude API is slow.');
+      }
+      if (error.exitCode) {
+        // If claude CLI not available, we'd need to use the API directly
+        // For now, we'll require claude CLI to be installed
+        console.error(chalk.red('\n✗ Claude CLI is required but not found'));
+        console.error(chalk.yellow('Install with: npm install -g @anthropic-ai/claude-cli\n'));
+        throw new Error('Claude CLI not found');
+      }
+      throw error;
     }
   }
 }
@@ -212,9 +225,13 @@ export async function generatePRContent(context: string): Promise<string> {
   const prompt = `Based on these git changes, write a PR title (first line, under 72 chars) and description. Include: brief summary, key changes as bullets. Format for GitHub markdown. Output ONLY the title on first line, then a blank line, then the description.`;
   
   try {
+    console.log(chalk.gray(`📊 Context size: ${context.length} characters`));
     return await executeClaudeCommand(prompt, context);
   } catch (error) {
     console.error(chalk.red('✗ Failed to generate PR content with Claude'));
+    if (error instanceof Error) {
+      console.error(chalk.gray(`Error details: ${error.message}`));
+    }
     throw error;
   }
 }
@@ -247,7 +264,15 @@ function limitDiffForPR(diff: string): string {
     return diff;
   }
   
-  // For large diffs, create a structured summary
+  console.log(chalk.gray(`📝 Diff too large (${diff.length} chars), truncating to ${maxChars} chars`));
+  
+  // For very large diffs, use simple truncation to avoid complexity
+  if (diff.length > 100000) {
+    console.log(chalk.gray('🔪 Using simple truncation for very large diff'));
+    return diff.substring(0, maxChars) + '\n\n[Diff truncated - PR contains additional changes]';
+  }
+  
+  // For moderately large diffs, use structured approach
   const lines = diff.split('\n');
   const fileHeaders = lines.filter(line => 
     line.startsWith('diff --git') || 
@@ -287,6 +312,7 @@ function limitDiffForPR(diff: string): string {
     currentLength += section.length;
   }
   
+  console.log(chalk.gray(`✂️ Truncated diff to ${limitedDiff.length} chars`));
   return limitedDiff + '\n\n[Diff truncated - PR contains additional changes]';
 }
 
