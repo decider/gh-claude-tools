@@ -265,19 +265,7 @@ export async function ensureBranchPushed(): Promise<void> {
     await exec(`git push -u origin ${branch}`);
   } else {
     console.log(chalk.yellow(`⏳ Pushing ${branch} to origin...`));
-    try {
-      await exec('git push');
-    } catch (error: any) {
-      // Handle non-fast-forward by pulling first
-      if (error.message?.includes('non-fast-forward')) {
-        console.log(chalk.yellow('⏳ Remote has changes, pulling first...'));
-        await exec('git pull --rebase');
-        console.log(chalk.yellow('⏳ Retrying push...'));
-        await exec('git push');
-      } else {
-        throw error;
-      }
-    }
+    await exec('git push');
   }
 }
 
