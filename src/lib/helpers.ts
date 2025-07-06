@@ -164,13 +164,41 @@ async function executeClaudeCommand(prompt: string, input: string): Promise<stri
 }
 
 /**
+ * Limit diff size for commit message generation
+ */
+function limitDiffForCommit(diff: string): string {
+  const maxChars = 8000;
+  
+  if (diff.length <= maxChars) {
+    return diff;
+  }
+  
+  // For large diffs, prioritize file changes over content
+  const lines = diff.split('\n');
+  const fileHeaders = lines.filter(line => line.startsWith('diff --git') || line.startsWith('+++') || line.startsWith('---'));
+  const changeLines = lines.filter(line => line.startsWith('+') || line.startsWith('-'));
+  
+  // Include file headers and first N change lines
+  const limitedLines = [...fileHeaders, ...changeLines.slice(0, 100)];
+  const limitedDiff = limitedLines.join('\n');
+  
+  if (limitedDiff.length <= maxChars) {
+    return limitedDiff;
+  }
+  
+  // If still too long, just use the first maxChars characters
+  return diff.substring(0, maxChars) + '\n\n[diff truncated due to size]';
+}
+
+/**
  * Generate commit message using Claude
  */
 export async function generateCommitMessage(diff: string): Promise<string> {
   const prompt = `Write a conventional commit message for these changes. Format: <type>: <description>. Keep under 72 chars. Use types: feat/fix/docs/style/refactor/test/chore. Output ONLY the commit message, no explanation.`;
   
   try {
-    return await executeClaudeCommand(prompt, diff);
+    const limitedDiff = limitDiffForCommit(diff);
+    return await executeClaudeCommand(prompt, limitedDiff);
   } catch (error) {
     console.error(chalk.red('✗ Failed to generate commit message with Claude'));
     throw error;
