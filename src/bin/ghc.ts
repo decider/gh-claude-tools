@@ -49,10 +49,10 @@ async function main(): Promise<void> {
     } catch (error) {
       console.log(chalk.red('✗ Commit failed'));
       if (error instanceof Error) {
-        if (isDebug) {
-          console.log(chalk.red(`\nError details:`));
-          console.log(chalk.gray(error.message));
-        }
+        // Always show the error output, not just in debug mode
+        // This is crucial for pre-commit hook errors
+        console.log(chalk.red(`\nError details:`));
+        console.log(chalk.gray(error.message));
       }
       process.exit(1);
     }

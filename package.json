@@ -50,6 +50,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.0.10",
+    "claude-code-hooks-cli": "^2.0.1",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   }
